@@ -38,14 +38,29 @@ import SwiftUI
   }
 #endif
 
+// `StructuredText` applies this modifier to its own subtree so a single
+// markup view's overlays (overflow scrolls, attachments, etc.) all share
+// one coordinator and clear each other's selection.
+//
+// To coordinate selection across *sibling* `StructuredText` views (for
+// example, multiple bubbles in a chat transcript) wrap the common
+// ancestor with ``TextualNamespace/textSelectionScope()``. That installs
+// a coordinator higher up the tree; the per-instance coordination below
+// detects the inherited one and defers to it instead of shadowing.
 struct TextSelectionCoordination: ViewModifier {
   #if TEXTUAL_ENABLE_TEXT_SELECTION
-    @State private var coordinator = TextSelectionCoordinator()
+    @Environment(TextSelectionCoordinator.self) private var inherited:
+      TextSelectionCoordinator?
+    @State private var fallback = TextSelectionCoordinator()
   #endif
 
   func body(content: Content) -> some View {
     #if TEXTUAL_ENABLE_TEXT_SELECTION
-      content.environment(coordinator)
+      if inherited != nil {
+        content
+      } else {
+        content.environment(fallback)
+      }
     #else
       content
     #endif

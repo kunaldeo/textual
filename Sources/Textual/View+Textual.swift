@@ -157,6 +157,35 @@ extension TextualNamespace where Base: View {
     #endif
   }
 
+  /// Coordinates text selection across multiple ``StructuredText`` views in
+  /// the modified subtree.
+  ///
+  /// Each ``StructuredText`` already coordinates selection between its own
+  /// internal overlays (overflow scrolls, attachments, etc.). To extend that
+  /// behaviour across *sibling* views — so starting a new selection in one
+  /// bubble clears the previous selection in another — apply this modifier
+  /// to a common ancestor:
+  ///
+  /// ```swift
+  /// ScrollView {
+  ///   VStack {
+  ///     ForEach(turns) { turn in
+  ///       StructuredText(markdown: turn.text)
+  ///         .textual.textSelection(.enabled)
+  ///     }
+  ///   }
+  /// }
+  /// .textual.textSelectionScope()
+  /// ```
+  ///
+  /// Without this modifier each sibling ``StructuredText`` keeps its own
+  /// independent coordinator and selections stack visually.
+  @available(tvOS, unavailable)
+  @available(watchOS, unavailable)
+  public func textSelectionScope() -> some View {
+    base.modifier(TextSelectionCoordination())
+  }
+
   /// Excludes the modified view from the text selection overlay's hit-testing.
   ///
   /// Apply this modifier to interactive elements (buttons, menus, controls) placed inside
