@@ -157,6 +157,34 @@ extension TextualNamespace where Base: View {
     #endif
   }
 
+  /// Excludes the modified view from the text selection overlay's hit-testing.
+  ///
+  /// Apply this modifier to interactive elements (buttons, menus, controls) placed inside
+  /// a custom ``StructuredText/CodeBlockStyle`` so taps reach them instead of being
+  /// intercepted by the selection overlay.
+  ///
+  /// ```swift
+  /// HStack {
+  ///   Text(configuration.code)
+  ///   Spacer()
+  ///   Button("Copy") { configuration.codeBlock.copyToPasteboard() }
+  ///     .textual.excludeFromTextSelection()
+  /// }
+  /// ```
+  @available(tvOS, unavailable)
+  @available(watchOS, unavailable)
+  public func excludeFromTextSelection() -> some View {
+    base.background(
+      GeometryReader { geometry in
+        Color.clear
+          .preference(
+            key: OverflowFrameKey.self,
+            value: [geometry.frame(in: .textContainer)]
+          )
+      }
+    )
+  }
+
   /// Sets the spacing used between table cells in ``StructuredText``.
   public func tableCellSpacing(
     horizontal: CGFloat? = nil,

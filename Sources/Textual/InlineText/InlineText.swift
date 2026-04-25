@@ -118,9 +118,22 @@ public struct InlineText: View {
       }
     }
     .coordinateSpace(.textContainer)
-    .onChange(of: markup, initial: true) { _, value in
-      self.attributedString = (try? parser.attributedString(for: value)) ?? .init()
+    .task(id: markup) {
+      await reparse(markup)
     }
+  }
+
+  private func reparse(_ markup: String) async {
+    // Coalesce rapid markup updates (e.g. streaming chunks). If markup
+    // changes again before this task resumes, SwiftUI cancels it and
+    // starts a new one — only the latest input is parsed.
+    do {
+      try await Task.sleep(for: .milliseconds(8))
+    } catch {
+      return
+    }
+    guard !Task.isCancelled else { return }
+    self.attributedString = (try? parser.attributedString(for: markup)) ?? .init()
   }
 }
 

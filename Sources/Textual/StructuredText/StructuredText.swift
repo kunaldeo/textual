@@ -122,14 +122,23 @@ public struct StructuredText: View {
         .modifier(TextSelectionCoordination())
     }
     .coordinateSpace(.textContainer)
-    .onChange(of: markup, initial: true) {
-      markupDidChange(markup)
+    .task(id: markup) {
+      await reparse(markup)
     }
     // Disable line limit to avoid per-fragment truncation
     .lineLimit(nil)
   }
 
-  private func markupDidChange(_ markup: String) {
+  private func reparse(_ markup: String) async {
+    // Coalesce rapid markup updates (e.g. streaming chunks). If markup
+    // changes again before this task resumes, SwiftUI cancels it and
+    // starts a new one — only the latest input is parsed.
+    do {
+      try await Task.sleep(for: .milliseconds(8))
+    } catch {
+      return
+    }
+    guard !Task.isCancelled else { return }
     self.attributedString = (try? parser.attributedString(for: markup)) ?? .init()
   }
 }
